@@ -90,11 +90,3 @@ class DisjointWithProbability(ParentModel):
 
         return samples
 
-
-#m = DisjointWithProbability(number_of_ports=32, group_sizes=[11, 11, 10], name="DisjointWith Probability",
-#                            probability=0.8)
-#a = m.sample(10)
-
-#print(m.get_groups())
-
-#print(a)
