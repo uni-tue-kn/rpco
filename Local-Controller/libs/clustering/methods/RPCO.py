@@ -42,10 +42,8 @@ class RPCO:
         return self._cluster_graph_auto(graph=graph, n_cluster=15, samples=samples, max_entries=max_entries)
 
     def overlap_cluster(self, graph=None, cluster=None, max_entries=1):
-        #runtime = time.time()
         entries = Evaluator.get_entries(clusters=cluster)
 
-        #print("Cluster:", cluster)
         if max_entries - entries > 0:
             nodes = self.flatten(cluster)
             nx_graph = graph.get_graph()
@@ -61,42 +59,26 @@ class RPCO:
                         count = sum(map(lambda x: nx_graph[node][x]['weight'], c_val))
                         node_cluster_count.append({"node": node, "cluster": c_id, "count": count})
 
-            # print(sorted(node_cluster_count, key=lambda x: x['count'], reverse=True))
             for x in [i for i in sorted(node_cluster_count, key=lambda x: x['count'], reverse=True) if i['count'] > 0]:
-                #print(x['node'], "to", x['cluster'], 'count', x)
                 temp_clusters = deepcopy(cluster)
                 temp_clusters[x['cluster']].append(x['node'])
 
                 if Evaluator.get_entries(temp_clusters) <= max_entries:
-                    #print("Operation valid, add", x['node'], "to", cluster[x['cluster']])
+
                     cluster[x['cluster']].append(x['node'])
 
-        #print("Overlap-Time:", time.time() - runtime)
-
-        #print("Cluster after overlap:", cluster)
 
         return cluster
 
     def _cluster_graph_auto(self, graph=None, n_cluster=1, samples=None, max_entries=1):
-        result = []
-
         clustering = []
         recirc = 10000
-        j = 2
 
-        #for i in range(2, 32):
-        #print(max(1, index_largest_gap[0]), "-", min(n_cluster+1, np.sum(index_largest_gap[0-2]))
-        #print(max(1, index_largest_gap-2), "-", min(n_cluster+1, index_largest_gap+1+2))
-        #for i in range(max(1, index_largest_gap-2), min(n_cluster+1, index_largest_gap+1+2)):
-        #for i in range(int(0.5 * len(vals)), int(1.5 * len(vals))):
         for i in range(2, n_cluster+1):
-            #print("n_cluster:", i)
             self.cur_entries = 0
             self.final_clusters = []
 
-            #runtime = time.time()
             cluster = self._cluster(n_cluster=i, graph=graph, max_entries=max_entries)
-            #print("Cluster time:", time.time() - runtime)
 
             if self.overlap:
                 cluster = self.overlap_cluster(graph=graph, max_entries=max_entries, cluster=cluster)
@@ -108,20 +90,11 @@ class RPCO:
             if rec < recirc:
                 clustering = cluster
                 recirc = rec
-                j = i
 
             entries = Evaluator.get_entries(cluster)
 
             if entries > max_entries:
                 raise Exception("Too much entries, allowed {}, got {}, with clusters: {}".format(max_entries, entries, cluster))
-
-
-
-
-
-        # print(result)
-        #print("Best cluster:", len(result[0][1]))
-        #print("Best cluster:", j, "real", len(clustering))
 
         return clustering
 
@@ -167,13 +140,10 @@ class RPCO:
             elif self.cur_entries < max_entries:
                 if not self.recursive:
                     continue
-
-                # print("Cluster too large with:", len(i[1]), i[1])
                 sub_graph = WeightedGraph()
                 sub_graph._graph = graph.get_graph().subgraph(i[1])
                 if max_entries - self.cur_entries > 2 ** 2:
                     number_of_cluster = 2
-                    # print(number_of_cluster)
                     self._cluster(n_cluster=number_of_cluster, max_entries=max_entries, graph=sub_graph)
 
         return self.final_clusters
