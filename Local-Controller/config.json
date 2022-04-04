@@ -1,0 +1,9 @@
+{
+  "cluster_type": "RPCO",
+  "model_params": {
+    "model": "Custom",
+    "n_ports": 32,
+    "p": 0.9,
+    "max_entries": 256
+  }
+}
