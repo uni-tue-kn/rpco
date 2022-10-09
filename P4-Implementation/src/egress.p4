@@ -9,6 +9,20 @@ control egress(
 
     Mac() mac_c;
 
+    action apply_fbm(bierBitmask fbm) {
+        hdr.bier.bs = hdr.bier.bs & fbm;
+    }
+
+    table egress_bift {
+        key = {
+            eg_intr_md.egress_port: exact;
+        }
+        actions = {
+            apply_fbm;
+        }
+        size = 64;
+    }
+
     apply {
         // Remove metadata header, adjust bier header
         if (hdr.bier_md.isValid()) { // only valid for cloned packets
@@ -16,6 +30,11 @@ control egress(
            hdr.bier_md.setInvalid();
            hdr.ipv4.setInvalid(); // remove outer ip header from possible bier-frr
            hdr.ethernet.ether_type = ETHERTYPE_BIER;
+        }
+        else {
+            if(hdr.bier.isValid()) {
+                egress_bift.apply();
+            }
         }
 
         mac_c.apply(hdr, eg_intr_md);
